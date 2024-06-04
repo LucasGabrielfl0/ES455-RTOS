@@ -13,7 +13,7 @@
 * 1. Gerar um Pulso Periodico com valor Hex de 0xAA55 que dure entre 3 e 4 μs, a cada 20 μs, 
 
 * 2. Usar o Temporizador 0 para ter um período de 160 μs
-*    2.1 fazer o led (pino PB5) piscar com um período de 640 ms
+*    2.1 fazer o led (pino PB5) piscar com um período de 640 ms (Dc= 50%)
 *    2.2 Adicione um atraso de 20 pulsos de clock (use a instrução NOP, que consome exatamente 1 pulso de clock) após modificar o led
 
 * 3. Monitore o recebimento de dados na interface serial
@@ -26,10 +26,6 @@
 
 
 
-
-
-
-
 // 3. Monitoramento da Serial
 ISR(USART_RX) {
     /* Verifique se houve erro. Se houve transmita o byte 0xDE. Se não
@@ -38,8 +34,11 @@ ISR(USART_RX) {
 }
 
 
+// Timer 0 Interrupt
 ISR(TIMER0_OVF_vect) {
     /* Pisque o LED a cada 320 ms */
+    PINB |= (1<<PB5);       // Toggles the LED PIN
+
 
     /* Introduza um delay de 20 instruções NOP */
     delay(5);
@@ -47,10 +46,8 @@ ISR(TIMER0_OVF_vect) {
 
 }
 
-/*
- * Função para criar um pequeno delay variável de aproximadamente n
- * us. Máximo de 255 us
- */
+/* Função para criar um pequeno delay variável de aproximadamente n
+ * us. Máximo de 255 us */
 void delay(uint8_t n) {
     uint8_t i;
 
@@ -59,10 +56,7 @@ void delay(uint8_t n) {
             asm("nop");
 }
 
-
-/*
- * Função para criar delay de n nops (cada nop = 1 ciclo de clock)
- */
+/* Função para criar delay de n nops (cada nop = 1 ciclo de clock) */
 void Nops(uint8_t n) {
     uint8_t i;
     for (i=0; i<n; i++)
@@ -70,20 +64,21 @@ void Nops(uint8_t n) {
 }
 
 int main(void) {
-    /*
-     * Configure aqui a porta que controla o LED, iniciando-o apagado
-     */
-    DDRB = 0;
-    PORTB = 0;
+    /* Configure aqui a porta que controla o LED, iniciando-o apagado */
+    DDRB  |= (1<<PB5);      // Sets up PB5 (LED) as an output
+    PORTB &= ~(1<<PB5);     // Turns off the LED
 
-    /* Configura o timer 0 para dar timeout a cada 160 us (dica: use
-       modo CTC) */
-    TCCR0B = 0;
-    TIMSK0 = 0;
+    /* Configure o timer 0 para dar timeout a cada 160 us (dica: use modo CTC) */
+    // CTC = 0 1 0 ( WMG02 WMG01 WMG00)
+    TCCR0A &=  ~(1<<WMG00);         //Turns off WMG00
+    TCCR0A |=   (1<<WMG01 ) ;       //Turns on  WMG01
+    
+    TCCR0B &= ~(1<<WMG02) ;         //Turns off WMG02
+    
+    TIMSK0 = 0;                     // turns on interrupt 
 
 
-    /* Configura a interface serial para receber dados no formato 8N1
-       a 480 kHz */
+    /* Configure a interface serial para receber dados no formato 8N1 a 480 kHz */
     UCSR0A = 0;
     UCSR0B = 0;
     UCSR0C = 0;
@@ -94,8 +89,7 @@ int main(void) {
     sei();
 
 
-    /* Gera o sinal digital correspondente a 0xAA55. Se usar loop,
-       coloque um delay de 2 instruções NOP antes de mudar o sinal */
+    /* Gera o sinal digital correspondente a 0xAA55. Se usar loop, coloque um delay de 2 instruções NOP antes de mudar o sinal */
     while (1) {
         /* O seu código aqui */
 
