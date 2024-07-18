@@ -188,17 +188,18 @@ uint8_t read(uint8_t* buf, uint8_t n){
 
 // Sends XOFF
 void flow_off(){
-  FlowControl = 0;  // Sets flow control as off
-  UDR0 = SCAPE;     // SCAPE prefix before XON or XOFF
-  UDR0 = XOFF;
+    SendByte(SCAPE);    // SCAPE prefix before XON or XOFF
+    SendByte(XOFF);     //
+    FlowControl = 0;    // Sets flow control as off
 
 }
 
 // Sends XON
 void flow_on(){
-  FlowControl = 0;  // Sets flow control as OON
-  UDR0 = SCAPE;     // CAPE prefix before XON or XOFF
-  UDR0 = XON;
+    SendByte(SCAPE);    // SCAPE prefix before XON or XOFF
+    SendByte(XON);      // Sedns XON
+    FlowControl = 1;  // Sets flow control as ON
+
 }
 
 // Detects if communication (flow) is on or off
@@ -241,7 +242,7 @@ void task_4(){
     //After 300 reads, sends XOFF
     if(MsgCounter==300){
         flow_off();
-        _delay_ms(10); // blocks 10 ms
+        _delay_ms(5); // blocks 5 ms
     }
 
     //if it stops receiving messages, blinks LED at 1Hz for 5s (1 time per sec)
@@ -286,9 +287,10 @@ void task_7_A(){
     // receive package
     uint8_t msg_DSE[] ="Desenvolvimento de sistemas embarcados";
     uint8_t buffer_1[100]={'',0};
+    uint8_t msg_received;
     
     // 7A: Read and compare Msg 1
-    read(buffer_1,sizeof(msg_DSE));                   // Read package
+    msg_received= read(buffer_1,sizeof(msg_DSE));                   // Read package
     CompareMsg(buffer_1, msg_DSE,sizeof(msg_DSE));    // Compare and Light the led (if the 2 are the same)
     
 }
@@ -298,10 +300,11 @@ void task_7_B(){
     // receive package
     uint8_t msg_DSE[] ="Desenvolvimento de sistemas embarcados";
     uint8_t buffer_2[10]={'',0};
+    uint8_t msg_received;
 
     // 7B: Read and compare Msg, but n=10
-    read(buffer_2,10);                      // Read package
-    CompareMsg(buffer_2, msg_DSE,10);       // Compare and Light the led (if the 2 are the same)
+    msg_received= read(buffer_2,10);                // Read package
+    CompareMsg(buffer_2, msg_DSE,10);               // Compare and Light the led (if the 2 are the same)
     
 }
 
