@@ -6,6 +6,18 @@
  
  */
 
+typedef enum{
+    STATE1,STATE2
+
+
+} states;
+
+typedef enum{
+    Input1,Input2
+
+} inputs;
+
+
 
 int main(){
 
