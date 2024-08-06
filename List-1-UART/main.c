@@ -16,9 +16,9 @@
 
 
 /*====================================== GLOBAL VARIABLES ======================================*/
-uint8_t FlowControl = 0;      // 1: Flow on | 2: Flow Off
-bool ReadyToSend  = 0;        // 1: USART is Ready to send another message | 2: USART is not ready
-bool ByteReceived  = 0;       // 1: USART received a msg | 2: no message received
+uint8_t FlowControl = 1;      // 1: Flow on | 2: Flow Off
+uint8_t ReadyToSend  = 1;        // 1: USART is Ready to send another message | 2: USART is not ready
+uint8_t ByteReceived  = 0;       // 1: USART received a msg | 2: no message received
 
 
 /*====================================== FUNCTIONS USED ======================================*/
@@ -31,7 +31,6 @@ uint8_t is_flow_on();											    // Returns if flow is or or off
 
 // Custom
 void CompareMsg(uint8_t* msg_1, uint8_t* msg_2, uint8_t n);		    // Compares 2 messages and turns LED accordingly
-uint8_t read_2(uint8_t* buf, uint16_t n)                            //
 void SendByte(uint8_t buff);		                                // Blocks system until sends Byte
 uint8_t ReadByte();		                                            // Blocks system until receives Byte
 void Set_LED(uint8_t State);
@@ -47,19 +46,19 @@ void task_7_B();
 
 /*====================================== INTERRUPTS ======================================*/
 // Called when USART regiter receives a byte
-ISR(USART_RX_vect) {
-    ByteReceived = true;
-    if(UDR0== XON){
+ISR(USART_RX_vect){
+    ByteReceived = 1;
+    if(UDR0 == XON){
         flow_on();
     }
-    if(UDR0== XOFF){
+    if(UDR0 == XOFF){
         flow_off();
     }
 }
 
 // Called when USART register can send another byte
 ISR(USART_UDRE_vect) {
-    ReadyToSend = true;
+    ReadyToSend = 1;
 }
 
 
@@ -74,7 +73,7 @@ int main(void) {
     /*======= USART SETUP =======*/
     UCSR0A = 0;                                                 //
     UCSR0B |= (1 << RXEN0) | (1 << TXEN0);                      // Enable Interrupts
-    UCSR0B |= (1 << RXCIE0) | (1 << UDRIE0) | (1 << TXCIE0);    // Enable Transmission and Reception
+    UCSR0B |= (1 << RXCIE0) | (1 << UDRIE0);    // Enable Transmission and Reception
     UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);                     // Sets that: 1 Byte = 8 bits
 
     // Transmission Speed
@@ -84,7 +83,7 @@ int main(void) {
 
     // Enable Interrupts Globally
     sei();
-
+    //flow_on();
     /*------------------------------------------ REQUIRED TESTS ----------------------------------------*/    
     /*======= 2.  =======*/
     task_2();
@@ -93,23 +92,23 @@ int main(void) {
     task_3();
     
     /*======= 4.  =======*/
-    task_4();
+//    task_4();
 
     /*======= 5.  =======*/
-    PORTB &= ~(1 << PB5);     // Turns OFF LED
-    task_4();                 // Repeat test 4
+//    task_4();                 // Repeat test 4
     
     /*======= 6.  =======*/
-    PORTB &= ~(1 << PB5);     // Turns OFF LED    
-    task_6();                 // Test 6
+//    Set_LED(0);     // Turns OFF LED
+//    task_6();                 // Test 6
     
     
     /* Loop infinito necessário em qualquer programa para embarcados */
     while (1) {
         /*======= 7.  =======*/
-        task_7_A();
-        task_7_B();
-
+//        task_7_A();
+//        task_7_B();
+    task_2();
+ 
     }
 
     return 0;
@@ -130,7 +129,7 @@ uint8_t write(uint8_t* buf, uint8_t n, int8_t close_packet){
    // if flow is on, sends the 'n' bytes of data
     for(int i=0; i<n; i++){
         // If receives XOFF, Stops transmission
-        if(!is_flow_on){
+        if(is_flow_on()==0){
             break;
         }
 
@@ -213,7 +212,8 @@ uint8_t is_flow_on(){
 /* Task 2 */
 void task_2(){
     uint8_t UFPE_DES[]= "Universidade Federal de Pernambuco\nDepartamento de Eletrônica e Sistemas";
-    uint8_t n_sent= write(UFPE_DES,sizeof(UFPE_DES), 1);
+    //uint8_t n_sent= write(UFPE_DES, sizeof(UFPE_DES)/sizeof(UFPE_DES[0]) , 1);
+	uint8_t n_sent= write(UFPE_DES, 15 , 1);
 }
 
 /* Task 3 */
@@ -254,7 +254,7 @@ void task_4(){
     }
     // if the messages continue LED is turned on for 5s 
     else{
-    Set_LED(1)              // Turns ON LED
+    Set_LED(1);              // Turns ON LED
     _delay_ms(5000);        // Wait 5s
     }
 
@@ -264,7 +264,7 @@ void task_4(){
 /* Task 6 */
 void task_6(){
     uint8_t Binary_String[]={0x00, 0x01, 0x11, 0x02, 0x13, 0x04, 0x7e, 0x05, 0x7d, 0x06};
-    uint8_t n_Bytes =sizeof(Binary_String)/sizeof(Binary_String[0]);
+    uint8_t n_Bytes = sizeof(Binary_String)/sizeof(Binary_String[0]);
     //turn off the LED:
     Set_LED(0);
 
@@ -286,7 +286,7 @@ void task_6(){
 void task_7_A(){
     // receive package
     uint8_t msg_DSE[] ="Desenvolvimento de sistemas embarcados";
-    uint8_t buffer_1[100]={'',0};
+    uint8_t buffer_1[100];
     uint8_t msg_received;
     
     // 7A: Read and compare Msg 1
@@ -299,7 +299,7 @@ void task_7_A(){
 void task_7_B(){
     // receive package
     uint8_t msg_DSE[] ="Desenvolvimento de sistemas embarcados";
-    uint8_t buffer_2[10]={'',0};
+    uint8_t buffer_2[10];
     uint8_t msg_received;
 
     // 7B: Read and compare Msg, but n=10
@@ -310,18 +310,18 @@ void task_7_B(){
 
 /*====================================== OTHER FUNCTIONS USED ======================================*/
 void CompareMsg(uint8_t* msg_1, uint8_t* msg_2, uint8_t n){
-    bool Is_equal = true;
+    uint8_t Is_equal = 1;
 
     // If they have different sizes, they are different
     if(sizeof(msg_1) !=sizeof(msg_2)){
-        Is_equal = false;
+        Is_equal = 0;
     }
 
     // Compare array elementy wise
     for(int i=0; i<n; i++){ 
-        // If any byte is different, returns false
+        // If any byte is different, returns 0
         if( (*(msg_1+i) != *(msg_2+i)) ) {
-            Is_equal = false;
+            Is_equal = 0;
             break;
         }
     }
@@ -338,25 +338,25 @@ void CompareMsg(uint8_t* msg_1, uint8_t* msg_2, uint8_t n){
 }
 
 void SendByte(uint8_t buff){
-    while (!ReadyToSend){};     // blocks until it can send 
+    while (ReadyToSend==0);     // blocks until it can send 
     UDR0 = buff;                // Sends byte
-    ReadyToSend = false;        // Flag
+    ReadyToSend = 0;        // Flag
 
 }
 
 uint8_t ReadByte(){
-    while (!ByteReceived){};         // blocks until it receives a byte 
+    while (ByteReceived==0);         // blocks until it receives a byte 
     uint8_t ByteBuff = UDR0;        // Reads Received byte
-    ByteReceived = false;           // Flag
+    ByteReceived = 0;               // Flag
 
     return ByteBuff;
-}
+};
 
-void Set_LED(bool State){
+void Set_LED(uint8_t State){
     if(State ==1){
         PORTB |= (1 << PB5);    // Turns ON LED
     }
     else{
         PORTB &= ~(1 << PB5);   // Turns off LED
     }
-}
+};
