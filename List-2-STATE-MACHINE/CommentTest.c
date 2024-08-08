@@ -14,7 +14,6 @@ int main(){
     int IndexArray[MAX_COMMENTS]={-1};
     unsigned int Comment_counter_1=0;
     unsigned int Comment_counter_2=0;
-    char* ptr;
 
     while(1){
 
@@ -39,30 +38,32 @@ int main(){
     }
 
     /* Rewrites the original message without comment*/
-    int alo=0;
-    char space[1] =" ";
-    int j=0;
-    for(int i=0; i < MAX_MESSAGE; i++){
-        if(i==Comment_Start[j]){
-            OUT_Message[alo]=IN_Message[i];
-            OUT_Message[alo+1]=IN_Message[i+1];
-            OUT_Message[alo+2]=space[0];
-            i=Comment_End[j];
-            OUT_Message[alo+3]=IN_Message[i];
-            OUT_Message[alo+4]=IN_Message[i+1];
-            i+=1;
-            alo+=4;
-            j++;
+    int Buffer_Index=0;
+    // char space[1] =" ";
+    int Comment_Index=0;
+    for(int Input_Index=0; Input_Index < MAX_MESSAGE; Input_Index++){
+        if(Input_Index==Comment_Start[Comment_Index]){
+            // OUT_Message[Buffer_Index]=IN_Message[Input_Index];
+            // OUT_Message[Buffer_Index+1]=IN_Message[Input_Index+1];
+            OUT_Message[Buffer_Index+2]=" ";
+            Input_Index=Comment_End[Comment_Index];
+            // OUT_Message[Buffer_Index+3]=IN_Message[Input_Index];
+            // OUT_Message[Buffer_Index+4]=IN_Message[Input_Index+1];
+            Input_Index+=1;
+            
+            Buffer_Index+=4;
+            Comment_Index++;
+
             // printf("\n here 1 \n");
-            if (j> Comment_counter_1){
-                j=0;
+            if (Comment_Index > Comment_counter_1){
+                Comment_Index=0;
             }
         }
         else{
-            OUT_Message[alo]=IN_Message[i];
+            OUT_Message[Buffer_Index]=IN_Message[Input_Index];
         }
 
-        alo++;
+        Buffer_Index++;
     }
 
     printf("\n[OUTPUT: ");
